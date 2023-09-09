@@ -135,7 +135,7 @@ def print_location(
         ),
         " ",
         get_coordinate_text(location.pos, location.dim),
-        RText("@", RColor.gray),
+        RText(" @ ", RColor.gray),
         get_dimension_text(location.dim),
     )
 
