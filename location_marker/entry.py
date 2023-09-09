@@ -31,6 +31,8 @@ class Config(Serializable):
     item_per_page: int = 10
     display_voxel_waypoint: bool = True
     display_xaero_waypoint: bool = True
+    # for survival server
+    for_smp: bool = False
 
 
 config: Config = None
@@ -83,10 +85,14 @@ def get_coordinate_text(
     x, y, z = coord
     x_i, y_i, z_i = map(int, coord)
 
-    return RText(f"[{x_i}, {y_i}, {z_i}]]", color=color).c(
+    text = RText(f"[{x_i}, {y_i}, {z_i}]]", color=color)
+    if config.for_smp:
+        return text
+
+    return text.c(
         RAction.suggest_command,
         f"/execute in {get_dim_key(dimension)} run tp {x} {y} {z}",
-    )
+    ).h("點擊以傳送座標點")
 
 
 def get_dim_key(dim: Union[int, str]) -> str:
