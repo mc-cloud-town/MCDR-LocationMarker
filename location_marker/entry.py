@@ -89,15 +89,10 @@ def get_coordinate_text(
     if config.for_smp:
         return text
 
-    return RTextList(
-        text,
-        RText(" [TP]", color=color)
-        .c(
-            RAction.suggest_command,
-            f"/execute in {get_dim_key(dimension)} run tp {x} {y} {z}",
-        )
-        .h("點擊以傳送座標點"),
-    )
+    return text.c(
+        RAction.run_command,
+        f"/execute in {get_dim_key(dimension)} run tp {x} {y} {z}",
+    ).h("點擊以傳送座標點")
 
 
 def get_dim_key(dim: Union[int, str]) -> str:
