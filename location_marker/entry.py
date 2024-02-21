@@ -34,8 +34,15 @@ class Config(Serializable):
     # for survival server
     for_smp: bool = False
 
+    cmd_use_permission: int = 0
+    cmd_list_permission: int = 1
+    cmd_search_permission: int = 1
+    cmd_add_permission: int = 1
+    cmd_del_permission: int = 2
+    cmd_info_permission: int = 1
 
-config: Config = None
+
+config: Config = None  # type: ignore
 storage = LocationStorage()
 server_inst: PluginServerInterface
 
@@ -67,9 +74,7 @@ def show_help(source: CommandSource):
         result = re.search(r"(?<=§7)!!loc[\w ]*(?=§)", line)
         if result is not None:
             help_msg_rtext.append(
-                RText(line)
-                .c(RAction.suggest_command, result.group())
-                .h(f"點擊以填入 §7{result.group()}§r")
+                RText(line).c(RAction.suggest_command, result.group()).h(f"點擊以填入 §7{result.group()}§r")
             )
         else:
             help_msg_rtext.append(line)
@@ -101,7 +106,7 @@ def get_dim_key(dim: Union[int, str]) -> str:
         -1: "minecraft:the_nether",
         1: "minecraft:the_end",
     }
-    return dimension_convert.get(dim, dim)
+    return dimension_convert.get(dim, dim)  # type: ignore
 
 
 def get_dimension_text(dim: Union[int, str]) -> RTextBase:
@@ -185,9 +190,7 @@ def broadcast_location(server: ServerInterface, location: Location):
     print_location(location, lambda msg: server.say(msg), show_list_symbol=False)
 
 
-def list_locations(
-    source: CommandSource, *, keyword: Optional[str] = None, page: Optional[int] = None
-):
+def list_locations(source: CommandSource, *, keyword: Optional[str] = None, page: Optional[int] = None):
     matched_locations = []
     for loc in storage.get_locations():
         if (
@@ -252,8 +255,8 @@ def add_location_here(source: CommandSource, name, desc=None):
         source.reply("僅有玩家允許使用本指令")
         return
     api = source.get_server().get_plugin_instance("minecraft_data_api")
-    pos = api.get_player_coordinate(source.player)
-    dim = api.get_player_dimension(source.player)
+    pos = api.get_player_coordinate(source.player)  # type: ignore
+    dim = api.get_player_dimension(source.player)  # type: ignore
     add_location(source, name, pos.x, pos.y, pos.z, dim, desc)
 
 
@@ -285,7 +288,7 @@ def show_location_detail(source: CommandSource, name):
 def on_load(server: PluginServerInterface, old_inst):
     global config, storage, server_inst
     server_inst = server
-    config = server.load_config_simple(constants.CONFIG_FILE, target_class=Config)
+    config = server.load_config_simple(constants.CONFIG_FILE, target_class=Config)  # type: ignore
     storage.load(os.path.join(server.get_data_folder(), constants.STORAGE_FILE))
 
     server.register_help_message(constants.PREFIX, "路標管理")
@@ -294,39 +297,38 @@ def on_load(server: PluginServerInterface, old_inst):
         .runs(lambda src, ctx: list_locations(src, keyword=ctx["keyword"]))
         .then(
             Integer("page").runs(
-                lambda src, ctx: list_locations(
-                    src, keyword=ctx["keyword"], page=ctx["page"]
-                )
+                lambda src, ctx: list_locations(src, keyword=ctx["keyword"], page=ctx["page"])
             )
         )
     )
 
     server.register_command(
         Literal(constants.PREFIX)
+        .requires(lambda src: src.has_permission(config.cmd_use_permission))
         .runs(show_help)
+        .requires(lambda src: src.has_permission(config.cmd_list_permission))
         .then(Literal("all").runs(lambda src: list_locations(src)))
+        .requires(lambda src: src.has_permission(config.cmd_list_permission))
         .then(
             Literal("list")
             .runs(lambda src: list_locations(src))
-            .then(
-                Integer("page").runs(
-                    lambda src, ctx: list_locations(src, page=ctx["page"])
-                )
-            )
+            .then(Integer("page").runs(lambda src, ctx: list_locations(src, page=ctx["page"])))
         )
+        .requires(lambda src: src.has_permission(config.cmd_search_permission))
         .then(Literal("search").then(search_node))
+        .requires(lambda src: src.has_permission(config.cmd_search_permission))
         .then(search_node)
         .then(  # for lazyman
-            Literal("add").then(
+            Literal("add")
+            .requires(lambda src: src.has_permission(config.cmd_add_permission))
+            .then(
                 QuotableText("name")
                 .then(
                     Literal("here")
                     .runs(lambda src, ctx: add_location_here(src, ctx["name"]))
                     .then(
                         GreedyText("desc").runs(
-                            lambda src, ctx: add_location_here(
-                                src, ctx["name"], ctx["desc"]
-                            )
+                            lambda src, ctx: add_location_here(src, ctx["name"], ctx["desc"])
                         )
                     )
                 )
@@ -365,18 +367,14 @@ def on_load(server: PluginServerInterface, old_inst):
                 )
             )
         )
+        .requires(lambda src: src.has_permission(config.cmd_del_permission))
         .then(
-            Literal("del").then(
-                QuotableText("name").runs(
-                    lambda src, ctx: delete_location(src, ctx["name"])
-                )
-            )
+            Literal("del").then(QuotableText("name").runs(lambda src, ctx: delete_location(src, ctx["name"])))
         )
+        .requires(lambda src: src.has_permission(config.cmd_info_permission))
         .then(
             Literal("info").then(
-                QuotableText("name").runs(
-                    lambda src, ctx: show_location_detail(src, ctx["name"])
-                )
+                QuotableText("name").runs(lambda src, ctx: show_location_detail(src, ctx["name"]))
             )
         )
     )

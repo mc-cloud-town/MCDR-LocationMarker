@@ -1,7 +1,7 @@
 import json
 import os
 from threading import RLock
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from mcdreforged.api.all import Serializable, deserialize, serialize
 
@@ -23,15 +23,11 @@ class Location(Serializable):
     dim: int
     pos: Point
 
-    @staticmethod
-    def ww(self):
-        pass
-
 
 class LocationStorage:
     def __init__(self):
         self.locations: List[Location] = []
-        self.__name_map = {}  # type: Dict[str, Location]
+        self.__name_map: dict[str, Location] = {}
         self.__lock = RLock()
 
     def get(self, name: str) -> Optional[Location]:
@@ -107,8 +103,6 @@ class LocationStorage:
         from location_marker.entry import server_inst
 
         with self.__lock:
-            file_path = os.path.join(
-                server_inst.get_data_folder(), constants.STORAGE_FILE
-            )
+            file_path = os.path.join(server_inst.get_data_folder(), constants.STORAGE_FILE)
             with open(file_path, "w", encoding="utf8") as file:
                 json.dump(serialize(self.locations), file, indent=4, ensure_ascii=False)
