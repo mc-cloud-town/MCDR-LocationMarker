@@ -1,0 +1,31 @@
+name: generate
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      releaseVersion:
+        description: 'Release version, ex: div, v0.0.1'
+        type: string
+        required: false
+        default: dev
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout for Github repository workspace
+        uses: actions/checkout@v4
+
+      - name: build
+        run: |
+          mkdir out
+
+          cd location_marker
+          zip -r __tmp * || echo "build to zip error"
+          mv __tmp.zip LocationMarker-CTEC-${{ inputs.releaseVersion }}.mcdr
+          cp LocationMarker-CTEC-${{ inputs.releaseVersion }}.mcdr ../out
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: LocationMarker-CTEC-${{ inputs.releaseVersion }}
+          path: out

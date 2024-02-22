@@ -1,0 +1,48 @@
+name: release
+
+on:
+  workflow_dispatch:
+
+  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release
+  release:
+    types: [created]
+
+jobs:
+  build:
+    uses: ./.github/workflows/generate.yaml
+    secrets: inherit
+    with:
+      releaseVersion: ${{ github.ref_name }}
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+
+    # allow the mod publish step to add asserts to release
+    # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+    permissions:
+      contents: write
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: LocationMarker-CTEC-${{ github.ref_name }}
+          path: out
+
+      # https://github.com/mikepenz/release-changelog-builder-action
+      - name: Build Changelog
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # https://github.com/softprops/action-gh-release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.github_release.outputs.changelog }}
+          files: ./out/*
