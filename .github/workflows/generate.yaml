@@ -20,10 +20,8 @@ jobs:
         run: |
           mkdir out
 
-          cd location_marker
-          zip -r __tmp * || echo "build to zip error"
-          mv __tmp.zip LocationMarker-CTEC-${{ inputs.releaseVersion }}.mcdr
-          cp LocationMarker-CTEC-${{ inputs.releaseVersion }}.mcdr ../out
+          zip -r __tmp README.md LICENSE location_marker mcdreforged.plugin.json
+          mv __tmp.zip ../out/LocationMarker-CTEC-${{ inputs.releaseVersion }}.mcdr
 
       - uses: actions/upload-artifact@v3
         with:
