@@ -21,7 +21,7 @@ jobs:
           mkdir out
 
           zip -r __tmp README.md LICENSE location_marker mcdreforged.plugin.json
-          mv __tmp.zip ../out/LocationMarker-CTEC-${{ inputs.releaseVersion }}.mcdr
+          mv __tmp.zip out/LocationMarker-CTEC-${{ inputs.releaseVersion }}.mcdr
 
       - uses: actions/upload-artifact@v3
         with:
