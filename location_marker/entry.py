@@ -294,6 +294,7 @@ def on_load(server: PluginServerInterface, old_inst):
     server.register_help_message(constants.PREFIX, "路標管理")
     search_node = (
         QuotableText("keyword")
+        .requires(lambda src: src.has_permission(config.cmd_search_permission))
         .runs(lambda src, ctx: list_locations(src, keyword=ctx["keyword"]))
         .then(
             Integer("page").runs(
@@ -304,19 +305,18 @@ def on_load(server: PluginServerInterface, old_inst):
 
     server.register_command(
         Literal(constants.PREFIX)
-        .requires(lambda src: src.has_permission(config.cmd_use_permission))
-        .runs(show_help)
-        .requires(lambda src: src.has_permission(config.cmd_list_permission))
-        .then(Literal("all").runs(lambda src: list_locations(src)))
         .requires(lambda src: src.has_permission(config.cmd_list_permission))
         .then(
             Literal("list")
+            .requires(lambda src: src.has_permission(config.cmd_list_permission))
             .runs(lambda src: list_locations(src))
             .then(Integer("page").runs(lambda src, ctx: list_locations(src, page=ctx["page"])))
         )
-        .requires(lambda src: src.has_permission(config.cmd_search_permission))
-        .then(Literal("search").then(search_node))
-        .requires(lambda src: src.has_permission(config.cmd_search_permission))
+        .then(
+            Literal("search")
+            .requires(lambda src: src.has_permission(config.cmd_search_permission))
+            .then(search_node)
+        )
         .then(search_node)
         .then(  # for lazyman
             Literal("add")
