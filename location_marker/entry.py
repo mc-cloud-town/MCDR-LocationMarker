@@ -29,16 +29,27 @@ from location_marker.storage import Location, LocationStorage, Point
 class Config(Serializable):
     teleport_hint_on_coordinate: bool = True
     item_per_page: int = 10
+    # 顯示 VoxelMap 的路標
     display_voxel_waypoint: bool = True
+    # 顯示 Xaero's Minimap 的路標
     display_xaero_waypoint: bool = True
     # for survival server
     for_smp: bool = False
 
+    # 使用 !!loc 的權限
     cmd_use_permission: int = 0
+    # 使用 !!loc list 的權限
     cmd_list_permission: int = 1
+    # 使用 !!loc search <keyword> 的權限
+    # (!!loc <keyword>)
     cmd_search_permission: int = 1
+    # 使用!!loc add <路標名> <x> <y> <z> <緯度ID> 的權限
+    # (!!loc add <路標名>)
+    # (!!loc add <路標名> here)
     cmd_add_permission: int = 1
+    # 使用!!loc del <路標名> 的權限
     cmd_del_permission: int = 2
+    # 使用!!loc info <路標名> 的權限
     cmd_info_permission: int = 1
 
 
@@ -305,6 +316,13 @@ def on_load(server: PluginServerInterface, old_inst):
                 lambda src, ctx: list_locations(src, keyword=ctx["keyword"], page=ctx["page"])
             )
         )
+    )
+
+    server.register_command(
+        Literal("!!l")
+        .requires(lambda src: src.has_permission(config.cmd_list_permission), get_permission_denied_text)
+        .runs(lambda src: list_locations(src))
+        .then(Integer("page").runs(lambda src, ctx: list_locations(src, page=ctx["page"])))
     )
 
     server.register_command(
