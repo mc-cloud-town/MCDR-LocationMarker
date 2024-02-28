@@ -285,6 +285,10 @@ def show_location_detail(source: CommandSource, name):
         source.reply(f"未找到路標§b{name}§r")
 
 
+def get_permission_denied_text():
+    return RText("權限不足").set_color(RColor.red)
+
+
 def on_load(server: PluginServerInterface, old_inst):
     global config, storage, server_inst
     server_inst = server
@@ -305,24 +309,27 @@ def on_load(server: PluginServerInterface, old_inst):
 
     server.register_command(
         Literal(constants.PREFIX)
-        .requires(lambda src: src.has_permission(config.cmd_list_permission))
+        .requires(lambda src: src.has_permission(config.cmd_list_permission), get_permission_denied_text)
+        .runs(show_help)
         .then(
             Literal("list")
-            .requires(lambda src: src.has_permission(config.cmd_list_permission))
+            .requires(lambda src: src.has_permission(config.cmd_list_permission), get_permission_denied_text)
             .runs(lambda src: list_locations(src))
             .then(Integer("page").runs(lambda src, ctx: list_locations(src, page=ctx["page"])))
         )
         .then(
             Literal("search")
-            .requires(lambda src: src.has_permission(config.cmd_search_permission))
+            .requires(
+                lambda src: src.has_permission(config.cmd_search_permission), get_permission_denied_text
+            )
             .then(search_node)
         )
-        .then(search_node)
         .then(  # for lazyman
             Literal("add")
-            .requires(lambda src: src.has_permission(config.cmd_add_permission))
+            .requires(lambda src: src.has_permission(config.cmd_add_permission), get_permission_denied_text)
             .then(
                 QuotableText("name")
+                .runs(lambda src, ctx: add_location_here(src, ctx["name"]))
                 .then(
                     Literal("here")
                     .runs(lambda src, ctx: add_location_here(src, ctx["name"]))
@@ -367,14 +374,15 @@ def on_load(server: PluginServerInterface, old_inst):
                 )
             )
         )
-        .requires(lambda src: src.has_permission(config.cmd_del_permission))
         .then(
-            Literal("del").then(QuotableText("name").runs(lambda src, ctx: delete_location(src, ctx["name"])))
+            Literal("del")
+            .requires(lambda src: src.has_permission(config.cmd_del_permission), get_permission_denied_text)
+            .then(QuotableText("name").runs(lambda src, ctx: delete_location(src, ctx["name"])))
         )
-        .requires(lambda src: src.has_permission(config.cmd_info_permission))
         .then(
-            Literal("info").then(
-                QuotableText("name").runs(lambda src, ctx: show_location_detail(src, ctx["name"]))
-            )
+            Literal("info")
+            .requires(lambda src: src.has_permission(config.cmd_info_permission), get_permission_denied_text)
+            .then(QuotableText("name").runs(lambda src, ctx: show_location_detail(src, ctx["name"])))
         )
+        .then(search_node)
     )
